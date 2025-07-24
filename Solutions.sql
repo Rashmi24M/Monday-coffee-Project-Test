@@ -18,7 +18,7 @@ SELECT
 	2) as coffee_consumers_in_millions,
 	city_rank
 FROM city
-ORDER BY 2 DESC
+ORDER BY 2 DESC;
 
 -- -- Q.2
 -- Total Revenue from Coffee Sales
@@ -29,9 +29,9 @@ SELECT
 	SUM(total) as total_revenue
 FROM sales
 WHERE 
-	EXTRACT(YEAR FROM sale_date)  = 2023
+	YEAR(sale_date)  = 2023
 	AND
-	EXTRACT(quarter FROM sale_date) = 4
+	Quarter(sale_date) = 4;
 
 
 
@@ -44,11 +44,11 @@ ON s.customer_id = c.customer_id
 JOIN city as ci
 ON ci.city_id = c.city_id
 WHERE 
-	EXTRACT(YEAR FROM s.sale_date)  = 2023
+	YEAR (s.sale_date)  = 2023
 	AND
-	EXTRACT(quarter FROM s.sale_date) = 4
-GROUP BY 1
-ORDER BY 2 DESC
+	QUARTER(s.sale_date)=4
+GROUP BY ci.city_name
+ORDER BY 2 DESC;
 
 
 -- Q.3
@@ -62,8 +62,8 @@ FROM products as p
 LEFT JOIN
 sales as s
 ON s.product_id = p.product_id
-GROUP BY 1
-ORDER BY 2 DESC
+GROUP BY product_name
+ORDER BY 2 DESC;
 
 -- Q.4
 -- Average Sales Amount per City
@@ -78,17 +78,15 @@ SELECT
 	SUM(s.total) as total_revenue,
 	COUNT(DISTINCT s.customer_id) as total_cx,
 	ROUND(
-			SUM(s.total)::numeric/
-				COUNT(DISTINCT s.customer_id)::numeric
-			,2) as avg_sale_pr_cx
+		SUM(s.total)/COUNT(DISTINCT s.customer_id),2) as avg_sale_pr_cx
 	
 FROM sales as s
 JOIN customers as c
 ON s.customer_id = c.customer_id
 JOIN city as ci
 ON ci.city_id = c.city_id
-GROUP BY 1
-ORDER BY 2 DESC
+GROUP BY ci.city_name
+ORDER BY 2 DESC;
 
 
 -- -- Q.5
@@ -123,7 +121,7 @@ SELECT
 FROM city_table
 JOIN 
 customers_table
-ON city_table.city_name = customers_table.city_name
+ON city_table.city_name = customers_table.city_name;
 
 
 
@@ -138,7 +136,7 @@ FROM -- table
 		ci.city_name,
 		p.product_name,
 		COUNT(s.sale_id) as total_orders,
-		DENSE_RANK() OVER(PARTITION BY ci.city_name ORDER BY COUNT(s.sale_id) DESC) as rank
+		DENSE_RANK() OVER(PARTITION BY ci.city_name ORDER BY COUNT(s.sale_id) DESC) as ranks
 	FROM sales as s
 	JOIN products as p
 	ON s.product_id = p.product_id
@@ -149,7 +147,7 @@ FROM -- table
 	GROUP BY 1, 2
 	-- ORDER BY 1, 3 DESC
 ) as t1
-WHERE rank <= 3
+WHERE ranks <= 3;
 
 
 -- Q.7
@@ -171,7 +169,7 @@ JOIN sales as s
 ON s.customer_id = c.customer_id
 WHERE 
 	s.product_id IN (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14)
-GROUP BY 1
+GROUP BY 1;
 
 
 -- -- Q.8
@@ -188,17 +186,15 @@ AS
 		SUM(s.total) as total_revenue,
 		COUNT(DISTINCT s.customer_id) as total_cx,
 		ROUND(
-				SUM(s.total)::numeric/
-					COUNT(DISTINCT s.customer_id)::numeric
-				,2) as avg_sale_pr_cx
+	               SUM(s.total)/COUNT(DISTINCT s.customer_id),2) as avg_sale_pr_cx
 		
 	FROM sales as s
 	JOIN customers as c
 	ON s.customer_id = c.customer_id
 	JOIN city as ci
 	ON ci.city_id = c.city_id
-	GROUP BY 1
-	ORDER BY 2 DESC
+	GROUP BY ci.city_name
+	ORDER BY 2 DESC;
 ),
 city_rent
 AS
@@ -213,13 +209,11 @@ SELECT
 	ct.total_cx,
 	ct.avg_sale_pr_cx,
 	ROUND(
-		cr.estimated_rent::numeric/
-									ct.total_cx::numeric
-		, 2) as avg_rent_per_cx
+	      cr.estimated_rent/ct.total_cx, 2) as avg_rent_per_cx
 FROM city_rent as cr
 JOIN city_table as ct
 ON cr.city_name = ct.city_name
-ORDER BY 4 DESC
+ORDER BY 4 DESC;
 
 
 
@@ -234,8 +228,8 @@ AS
 (
 	SELECT 
 		ci.city_name,
-		EXTRACT(MONTH FROM sale_date) as month,
-		EXTRACT(YEAR FROM sale_date) as YEAR,
+		MONTH(sale_date) as month,
+		YEAR(sale_date) as YEAR,
 		SUM(s.total) as total_sale
 	FROM sales as s
 	JOIN customers as c
@@ -264,13 +258,12 @@ SELECT
 	cr_month_sale,
 	last_month_sale,
 	ROUND(
-		(cr_month_sale-last_month_sale)::numeric/last_month_sale::numeric * 100
-		, 2
-		) as growth_ratio
+		(cr_month_sale-last_month_sale)/last_month_sale * 100, 2) 
+	as growth_ratio
 
 FROM growth_ratio
 WHERE 
-	last_month_sale IS NOT NULL	
+	last_month_sale IS NOT NULL;	
 
 
 -- Q.10
@@ -287,16 +280,15 @@ AS
 		SUM(s.total) as total_revenue,
 		COUNT(DISTINCT s.customer_id) as total_cx,
 		ROUND(
-				SUM(s.total)::numeric/
-					COUNT(DISTINCT s.customer_id)::numeric
-				,2) as avg_sale_pr_cx
+			SUM(s.total)/
+			COUNT(DISTINCT s.customer_id),2) as avg_sale_pr_cx
 		
 	FROM sales as s
 	JOIN customers as c
 	ON s.customer_id = c.customer_id
 	JOIN city as ci
 	ON ci.city_id = c.city_id
-	GROUP BY 1
+	GROUP BY ci.city_name
 	ORDER BY 2 DESC
 ),
 city_rent
@@ -316,13 +308,11 @@ SELECT
 	estimated_coffee_consumer_in_millions,
 	ct.avg_sale_pr_cx,
 	ROUND(
-		cr.estimated_rent::numeric/
-									ct.total_cx::numeric
-		, 2) as avg_rent_per_cx
+		cr.estimated_rent/ct.total_cx::numeric, 2) as avg_rent_per_cx
 FROM city_rent as cr
 JOIN city_table as ct
 ON cr.city_name = ct.city_name
-ORDER BY 2 DESC
+ORDER BY 2 DESC;
 
 /*
 -- Recomendation
